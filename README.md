@@ -193,3 +193,4 @@ Full diagrams in `docs/diagrams/UML.md`:
 - Domain Model
 - Class Diagram (architecture)
 - Event Status State Machine
+
