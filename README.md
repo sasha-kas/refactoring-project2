@@ -2,10 +2,12 @@
 
 System for planning events: holidays, travel, responsibility distribution.
 
-[![CI Pipeline](https://github.com/your-username/event-planning-board/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/your-username/event-planning-board/actions/workflows/ci-pipeline.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=event-planning-board&metric=alert_status)](https://sonarcloud.io/project/overview?id=event-planning-board)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=event-planning-board&metric=coverage)](https://sonarcloud.io/project/overview?id=event-planning-board)
+
+[![CI Pipeline](https://github.com/sasha-kas/refactoring-project2/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/sasha-kas/refactoring-project2/actions/workflows/ci-pipeline.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=sasha-kas_refactoring-project2&metric=alert_status)](https://sonarcloud.io/project/overview?id=sasha-kas_refactoring-project2)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=sasha-kas_refactoring-project2&metric=coverage)](https://sonarcloud.io/project/overview?id=sasha-kas_refactoring-project2)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
+
 
 ---
 
