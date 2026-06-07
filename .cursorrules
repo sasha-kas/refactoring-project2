@@ -1,0 +1,65 @@
+# Event Planning Board — AI Agent Rules
+# Applies to: Cursor, Claude, GitHub Copilot
+
+## MANDATORY RULES (never violate)
+
+### 1. No external dependencies
+- FORBIDDEN: databases (SQLite, PostgreSQL, MongoDB, Redis)
+- FORBIDDEN: external HTTP APIs, cloud services, ORMs
+- ALL storage must use In-Memory collections (dict, list)
+- EXCEPTION: pytest, pytest-cov for testing only
+
+### 2. Interfaces before implementation
+- Every service class MUST implement a defined interface (ABC)
+- Every repository MUST extend IRepository[T]
+- NEVER inject concrete classes — always inject interfaces
+
+### 3. Test-Driven Development (TDD)
+- Write tests BEFORE or SIMULTANEOUSLY with implementation
+- Every new method requires at least one test
+- Edge cases (empty input, None, negative values) MUST be tested
+- Coverage threshold: 70% minimum (target: >90%)
+
+### 4. SOLID principles — mandatory
+- S: Each class has ONE responsibility
+- O: Extend via Strategy/Observer, don't modify existing classes
+- L: Subtypes must be substitutable for base types
+- I: Prefer small, focused interfaces
+- D: Depend on abstractions (IRepository, IStrategy), not concretions
+
+### 5. GoF Design Patterns — mandatory
+- Strategy: ALL algorithms (priority scoring, budget warnings) via ITaskPriorityStrategy / IBudgetWarningStrategy
+- Observer: ALL notifications via EventBus + IEventObserver
+- Adding new patterns requires updating docs/diagrams/
+
+### 6. Code style
+- Type hints on ALL function signatures
+- Docstrings on all public methods and classes
+- No magic numbers — use named constants or Enum values
+- Max function length: 30 lines; max class: 200 lines
+
+## PROJECT STRUCTURE — strictly follow
+
+src/models/        — dataclasses only, NO business logic beyond simple state
+src/services/      — business logic, depends on repository interfaces
+src/storage/       — IRepository implementations (InMemory only)
+src/utils/         — Strategy, Observer, helpers
+
+tests/unit/        — one test file per module, mock dependencies
+tests/integration/ — end-to-end scenarios using shared_context fixture
+
+## FORBIDDEN PATTERNS (anti-patterns)
+
+- God classes: classes doing everything
+- Hard-coded strings for event types, status — always use Enum
+- Direct instantiation of repositories inside services — inject them
+- Test code without assertions
+- Catching generic Exception without re-raising or logging
+
+## WHEN GENERATING TESTS
+
+- Use pytest fixtures from tests/conftest.py
+- For integration tests: use shared_context fixture (ensures shared EventBus)
+- Mock only external I/O — never mock your own domain logic
+- Name tests: test_<method>_<scenario>_<expected_result>
+- Always test: happy path, None input, empty collections, boundary values

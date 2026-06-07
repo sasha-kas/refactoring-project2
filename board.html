@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дошка планування подій</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f7f4; --surface: #ffffff; --surface2: #f1efe8;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --text: #1a1a1a; --text2: #5f5e5a; --text3: #888780;
+    --radius: 8px; --radius-lg: 12px;
+    --green: #0f6e56; --green-bg: #e1f5ee;
+    --amber: #854f0b; --amber-bg: #faeeda;
+    --red: #a32d2d;   --red-bg: #fcebeb;
+    --blue: #185fa5;  --blue-bg: #e6f1fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#1a1918; --surface:#242321; --surface2:#2c2c2a;
+      --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.18);
+      --text:#f0ede6; --text2:#b4b2a9; --text3:#888780;
+      --green:#5dcaa5; --green-bg:#04342c;
+      --amber:#ef9f27; --amber-bg:#412402;
+      --red:#f09595;   --red-bg:#501313;
+      --blue:#85b7eb;  --blue-bg:#042c53;
+    }
+  }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:24px; font-size:14px; }
+  .board-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; padding-bottom:16px; border-bottom:0.5px solid var(--border); flex-wrap:wrap; gap:12px; }
+  .board-title { font-size:18px; font-weight:600; }
+  .event-selector { display:flex; gap:8px; flex-wrap:wrap; }
+  .event-pill { font-size:12px; padding:5px 12px; border-radius:20px; cursor:pointer; border:0.5px solid var(--border2); background:var(--surface); color:var(--text2); transition:all .15s; white-space:nowrap; }
+  .event-pill.active { background:var(--surface2); color:var(--text); font-weight:500; }
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .stat-card { background:var(--surface2); border-radius:var(--radius); padding:12px 14px; }
+  .stat-label { font-size:11px; color:var(--text3); margin-bottom:4px; letter-spacing:.03em; }
+  .stat-value { font-size:20px; font-weight:600; }
+  .stat-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+  .progress-wrap { background:var(--border); border-radius:4px; height:4px; margin-bottom:20px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:4px; background:var(--green); transition:width .4s; }
+  .columns { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:start; }
+  .col-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .col-title { font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; }
+  .col-count { font-size:11px; padding:2px 7px; border-radius:10px; background:var(--surface2); color:var(--text3); border:0.5px solid var(--border); }
+  .task-card { background:var(--surface); border:0.5px solid var(--border); border-radius:var(--radius); padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
+  .task-card:hover { border-color:var(--border2); }
+  .task-card.selected { border-color:var(--blue); }
+  .task-title { font-size:13px; font-weight:500; margin-bottom:6px; line-height:1.35; }
+  .task-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .badge { font-size:10px; padding:2px 6px; border-radius:4px; font-weight:500; }
+  .p-critical{background:var(--red-bg);color:var(--red)} .p-high{background:var(--amber-bg);color:var(--amber)}
+  .p-medium{background:var(--blue-bg);color:var(--blue)} .p-low{background:var(--green-bg);color:var(--green)}
+  .assignee-chip { font-size:10px; background:var(--blue-bg); color:var(--blue); padding:2px 6px; border-radius:4px; }
+  .task-cost { font-size:11px; color:var(--text3); margin-left:auto; }
+  .due-chip { font-size:10px; color:var(--text3); }
+  .due-chip.overdue { color:var(--red); }
+  .empty-col { border:0.5px dashed var(--border); border-radius:var(--radius); padding:20px; text-align:center; font-size:12px; color:var(--text3); }
+  .add-btn { width:100%; text-align:left; padding:6px 10px; border:0.5px dashed var(--border2); border-radius:var(--radius); background:transparent; color:var(--text3); cursor:pointer; font-size:12px; display:flex; align-items:center; gap:6px; }
+  .add-btn:hover { background:var(--surface2); }
+  .budget-section { margin-top:20px; padding-top:16px; border-top:0.5px solid var(--border); }
+  .section-title { font-size:13px; font-weight:600; margin-bottom:12px; }
+  .budget-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .budget-cat { font-size:12px; color:var(--text2); width:130px; flex-shrink:0; }
+  .budget-track { flex:1; height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  .budget-fill { height:100%; border-radius:3px; transition:width .4s; }
+  .budget-nums { font-size:11px; color:var(--text3); width:140px; text-align:right; flex-shrink:0; }
+  .participants-row { display:flex; gap:6px; align-items:center; margin-top:16px; padding-top:16px; border-top:0.5px solid var(--border); flex-wrap:wrap; }
+  .p-label { font-size:12px; color:var(--text2); margin-right:4px; }
+  .avatar { width:30px; height:30px; border-radius:50%; font-size:10px; font-weight:600; display:flex; align-items:center; justify-content:center; cursor:default; }
+  .rsvp-yes{background:var(--green-bg);color:var(--green)} .rsvp-no{background:var(--red-bg);color:var(--red)}
+  .rsvp-maybe{background:var(--amber-bg);color:var(--amber)} .rsvp-none{background:var(--surface2);color:var(--text3)}
+  .status-badge { font-size:11px; padding:3px 9px; border-radius:10px; font-weight:500; }
+  .s-draft{background:var(--surface2);color:var(--text3)} .s-planned{background:var(--blue-bg);color:var(--blue)}
+  .s-in_progress{background:var(--amber-bg);color:var(--amber)} .s-completed{background:var(--green-bg);color:var(--green)}
+  .s-cancelled{background:var(--red-bg);color:var(--red)}
+  .legend { font-size:11px; color:var(--text3); margin-left:8px; }
+  .loading { text-align:center; padding:60px; color:var(--text3); font-size:15px; }
+  .error-msg { background:var(--red-bg); color:var(--red); padding:12px 16px; border-radius:var(--radius); margin-bottom:16px; font-size:13px; }
+  .refresh-btn { font-size:12px; padding:5px 12px; border:0.5px solid var(--border2); border-radius:20px; background:var(--surface); color:var(--text2); cursor:pointer; margin-left:8px; }
+  .refresh-btn:hover { background:var(--surface2); }
+  @media(max-width:768px) { .stats-row{grid-template-columns:repeat(2,1fr)} .columns{grid-template-columns:1fr 1fr} .board-header{flex-direction:column;align-items:flex-start} }
+  @media(max-width:480px) { .columns{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div id="app"><div class="loading">⏳ Завантаження даних з сервера...</div></div>
+
+<script>
+const API = 'http://localhost:8000/api';
+const P_LABELS = {critical:'Критично',high:'Високий',medium:'Середній',low:'Низький'};
+const S_LABELS = {pending:'Очікує',in_progress:'В роботі',done:'Готово',overdue:'Прострочено'};
+const EV_LABELS = {draft:'Чернетка',planned:'Заплановано',in_progress:'Виконується',completed:'Завершено',cancelled:'Скасовано'};
+const COLUMNS = [
+  {key:'pending',label:'Очікує',color:'#888780'},
+  {key:'in_progress',label:'В роботі',color:'#854f0b'},
+  {key:'done',label:'Готово',color:'#0f6e56'},
+  {key:'overdue',label:'Прострочено',color:'#a32d2d'},
+];
+
+let EVENTS = [], currentId = null, selectedTaskId = null;
+
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers:{'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+async function loadEvents() {
+  try {
+    EVENTS = await api('/events');
+    if (!currentId && EVENTS.length) currentId = EVENTS[0].id;
+    render();
+  } catch(e) {
+    document.getElementById('app').innerHTML =
+      `<div class="error-msg">⚠️ Не вдалося підключитися до сервера.<br>
+       Запустіть: <code>python3 api.py</code> у папці проєкту, потім<br>
+       <button class="refresh-btn" onclick="location.reload()">🔄 Спробувати знову</button></div>`;
+  }
+}
+
+function ev() { return EVENTS.find(e => e.id === currentId) || {}; }
+
+function render() {
+  document.getElementById('app').innerHTML = `
+    <div class="board-header">
+      <span class="board-title">📅 Дошка планування подій</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="event-selector" id="event-selector"></div>
+        <button class="refresh-btn" onclick="loadEvents()">🔄</button>
+      </div>
+    </div>
+    <div class="stats-row" id="stats-row"></div>
+    <div class="progress-wrap"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
+    <div class="columns" id="board-columns"></div>
+    <div class="budget-section" id="budget-section"></div>
+    <div class="participants-row" id="participants-row"></div>`;
+
+  renderSelector(); renderStats(); renderBoard(); renderBudget(); renderParticipants();
+}
+
+function renderSelector() {
+  document.getElementById('event-selector').innerHTML = EVENTS.map(e =>
+    `<button class="event-pill ${e.id===currentId?'active':''}" onclick="selectEvent('${e.id}')">${e.title}</button>`
+  ).join('');
+}
+
+function renderStats() {
+  const e = ev();
+  const p = e.progress || {};
+  const pct = p.percent || 0;
+  const over = (e.total_actual||0) > (e.total_planned||0);
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Задач виконано</div>
+      <div class="stat-value">${p.done||0}/${p.total||0}</div>
+      <div class="stat-sub">${pct}% завершено</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Учасників</div>
+      <div class="stat-value">${(e.participants||[]).length}</div>
+      <div class="stat-sub">${(e.participants||[]).filter(p=>p.rsvp==='yes').length} підтвердили</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Бюджет (план)</div>
+      <div class="stat-value">${((e.total_planned||0)/1000).toFixed(1)}k ₴</div>
+      <div class="stat-sub" style="color:${over?'var(--red)':'var(--green)'}">
+        Факт: ${((e.total_actual||0)/1000).toFixed(1)}k ₴ ${over?'⚠ Перевищено':'✓ В межах'}
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Статус події</div>
+      <div class="stat-value" style="font-size:13px;padding-top:5px">
+        <span class="status-badge s-${e.status}">${EV_LABELS[e.status]||e.status}</span>
+      </div>
+      <div class="stat-sub">${e.location||''}</div>
+    </div>`;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function renderBoard() {
+  const e = ev();
+  const tasks = e.tasks || [];
+  document.getElementById('board-columns').innerHTML = COLUMNS.map(col => {
+    const colTasks = tasks.filter(t => t.status === col.key);
+    const cards = colTasks.length ? colTasks.map(t => {
+      const pc = {critical:'p-critical',high:'p-high',medium:'p-medium',low:'p-low'}[t.priority]||'p-medium';
+      return `<div class="task-card ${t.id===selectedTaskId?'selected':''}" onclick="selectTask('${t.id}','${e.id}')">
+        <div class="task-title">${t.title}</div>
+        <div class="task-meta">
+          <span class="badge ${pc}">${P_LABELS[t.priority]||t.priority}</span>
+          ${t.assignee_name?`<span class="assignee-chip">${t.assignee_name.split(' ')[0]}</span>`:''}
+          ${t.due_date?`<span class="due-chip ${col.key==='overdue'?'overdue':''}">${t.due_date}</span>`:''}
+          ${t.estimated_cost>0?`<span class="task-cost">${t.estimated_cost.toLocaleString()} ₴</span>`:''}
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty-col">Немає задач</div>`;
+    return `<div>
+      <div class="col-header">
+        <span class="col-title" style="color:${col.color}">${col.label}</span>
+        <span class="col-count">${colTasks.length}</span>
+      </div>
+      ${cards}
+      <button class="add-btn" onclick="addTask('${e.id}','${col.key}')">+ Додати задачу</button>
+    </div>`;
+  }).join('');
+}
+
+function renderBudget() {
+  const e = ev();
+  const entries = e.budget_entries || [];
+  const rows = entries.map(b => {
+    const pct = b.planned ? Math.min(100, Math.round(b.actual/b.planned*100)) : 0;
+    const color = b.actual > b.planned ? 'var(--red)' : 'var(--green)';
+    return `<div class="budget-row">
+      <span class="budget-cat">${b.cat}</span>
+      <div class="budget-track"><div class="budget-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="budget-nums">${(b.actual||0).toLocaleString()} / ${b.planned.toLocaleString()} ₴</span>
+    </div>`;
+  }).join('');
+  document.getElementById('budget-section').innerHTML =
+    `<div class="section-title">💰 Бюджет по категоріях</div>${rows||'<div style="color:var(--text3);font-size:12px">Категорії не додані</div>'}`;
+}
+
+function renderParticipants() {
+  const e = ev();
+  const parts = e.participants || [];
+  const avatars = parts.map(p =>
+    `<div class="avatar rsvp-${p.rsvp||'none'}" title="${p.name} — ${p.rsvp||'без відповіді'}">${p.initials}</div>`
+  ).join('');
+  document.getElementById('participants-row').innerHTML =
+    `<span class="p-label">👥 Учасники:</span>${avatars||'<span style="color:var(--text3);font-size:12px">Немає учасників</span>'}
+     <span class="legend">🟢 так &nbsp; 🟡 можливо &nbsp; 🔴 ні</span>`;
+}
+
+function selectEvent(id) { currentId = id; selectedTaskId = null; render(); }
+
+async function selectTask(taskId, eventId) {
+  selectedTaskId = selectedTaskId === taskId ? null : taskId;
+  renderBoard();
+  if (!selectedTaskId) return;
+  const action = prompt('Дія:\n1 — Виконати задачу\n2 — Додати коментар\n(Enter — скасувати)');
+  if (action === '1') {
+    await api('/tasks/complete', 'POST', {task_id: taskId});
+    await loadEvents();
+  } else if (action === '2') {
+    const comment = prompt('Введіть коментар:');
+    if (comment && comment.trim()) {
+      await api('/tasks/comment', 'POST', {task_id: taskId, comment: comment.trim()});
+      await loadEvents();
+    }
+  }
+}
+
+async function addTask(eventId, status) {
+  const title = prompt('Назва нової задачі:');
+  if (!title || !title.trim()) return;
+  await api('/tasks', 'POST', {event_id: eventId, title: title.trim()});
+  await loadEvents();
+}
+
+loadEvents();
+</script>
+</body>
+</html>
